@@ -2,7 +2,7 @@
 //Exercise: Build an "About Me" Component in this file
 
 export default function StudentWork() {
-  //add variables here
+  //add variables here..
   const myName = 'Shonta';
   const myAge = 39;
   const myLocation = 'United States';
