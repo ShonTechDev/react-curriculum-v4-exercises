@@ -13,8 +13,7 @@ export default function BugMutatedState() {
   let [count, setCount] = useState(0);
 
   function handleAdd() {
-    count++;
-    setCount(count);
+    setCount(count + 1);
   }
 
   return (
@@ -27,3 +26,5 @@ export default function BugMutatedState() {
 
 // Explanation:
 // (Write your explanation here)
+// Count++ is being directly changed which is mutation and React does not track that change
+// correctly. (it can't tell when its updated). So it only needs to be setCount(count + 1); just like in bugEffectLoop.
