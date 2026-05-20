@@ -4,11 +4,22 @@ import './Lesson07Styles.css';
 
 export default function FetchOnRender() {
   const [posts, setPosts] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     async function fetchPosts() {
-      const data = await getPosts();
-      setPosts(data);
+      setIsLoading(true);
+      setError('');
+
+      try {
+        const data = await getPosts();
+        setPosts(data);
+      } catch (error) {
+        setError(`Error: ${error.message}`);
+      } finally {
+        setIsLoading(false);
+      }
     }
 
     fetchPosts();
@@ -19,6 +30,10 @@ export default function FetchOnRender() {
       <h1 className="heading">Fetch list of posts on render</h1>
 
       <div className="content">
+        {isLoading && <p>Loading posts...</p>}
+
+        {error && <p>{error}</p>}
+
         {posts.map((post) => (
           <div key={post.id}>
             <h2>{post.title}</h2>

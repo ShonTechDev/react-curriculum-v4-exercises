@@ -4,10 +4,21 @@ import './Lesson07Styles.css';
 
 export default function FetchOnClick() {
   const [post, setPost] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   async function handleClick() {
-    const data = await getSinglePost(1);
-    setPost(data);
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const data = await getSinglePost(1);
+      setPost(data);
+    } catch (error) {
+      setError(`Error: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -19,6 +30,10 @@ export default function FetchOnClick() {
       </button>
 
       <div className="content">
+        {isLoading && <p>Loading post...</p>}
+
+        {error && <p>{error}</p>}
+
         {post && (
           <div>
             <h2>{post.title}</h2>
