@@ -1,13 +1,66 @@
-import { useContext, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { SurveyContext } from '../SurveyContext';
 import { QUESTION_TYPES } from '../surveyReducer';
 import styles from '../StudentWork.module.css';
 
+function OptionEditor({ questionId, option, optionIndex, canDelete }) {
+  const [optionText, setOptionText] = useState(option);
+  const { dispatch } = useContext(SurveyContext);
+
+  useEffect(() => {
+    setOptionText(option);
+  }, [option]);
+
+  function handleSaveOption() {
+    dispatch({
+      type: 'UPDATE_OPTION_TEXT',
+      payload: {
+        questionId,
+        optionIndex,
+        newText: optionText,
+      },
+    });
+  }
+
+  function handleDeleteOption() {
+    dispatch({
+      type: 'DELETE_OPTION_FROM_QUESTION',
+      payload: {
+        questionId,
+        optionIndex,
+      },
+    });
+  }
+
+  return (
+    <>
+      <input
+        type="text"
+        value={optionText}
+        onChange={(event) => setOptionText(event.target.value)}
+      />
+
+      <button type="button" onClick={handleSaveOption}>
+        Save
+      </button>
+
+      <button type="button" disabled={!canDelete} onClick={handleDeleteOption}>
+        Delete
+      </button>
+    </>
+  );
+}
+
 // Question Item Component - Students will add Edit/Delete functionality here
 export function QuestionItem({ question }) {
-  //HINT: use these with controlled form
   const [workingText, setWorkingText] = useState(question.question);
-  const { dispatch } = useContext(SurveyContext);
+  const { state, dispatch } = useContext(SurveyContext);
+
+  const isEditing = state.ui.editingQuestionId === question.id;
+
+  useEffect(() => {
+    setWorkingText(question.question);
+  }, [question.question]);
 
   // Helper function to convert type to title case
   const formatQuestionType = (type) => {
@@ -17,22 +70,65 @@ export function QuestionItem({ question }) {
       .join('-');
   };
 
-  // TODO: Students will add edit functionality here
   const handleEdit = () => {
-    console.log('TODO: Implement edit functionality');
-    // Hint: Use SET_EDITING_QUESTION action
+    if (isEditing) {
+      dispatch({
+        type: 'SET_EDITING_QUESTION',
+        payload: { questionId: null },
+      });
+      return;
+    }
+
+    setWorkingText(question.question);
+
+    dispatch({
+      type: 'SET_EDITING_QUESTION',
+      payload: { questionId: question.id },
+    });
   };
 
-  // TODO: Students will add save functionality here
   const handleSave = () => {
-    console.log('TODO: Implement save functionality');
-    // Hint: Use UPDATE_QUESTION_TEXT action with workingText
+    dispatch({
+      type: 'UPDATE_QUESTION_TEXT',
+      payload: {
+        questionId: question.id,
+        newText: workingText,
+      },
+    });
+
+    dispatch({
+      type: 'SET_EDITING_QUESTION',
+      payload: { questionId: null },
+    });
   };
 
-  // TODO: Students will add delete functionality here
   const handleDelete = () => {
-    console.log('TODO: Implement delete functionality');
-    // Hint: Show confirmation dialog, then use DELETE_QUESTION action
+    const shouldDelete = window.confirm(
+      'Are you sure you want to delete this question?'
+    );
+
+    if (shouldDelete) {
+      dispatch({
+        type: 'DELETE_QUESTION',
+        payload: { questionId: question.id },
+      });
+    }
+  };
+
+  const handleAddOption = () => {
+    const optionText = window.prompt('Enter new option text:');
+
+    if (!optionText) {
+      return;
+    }
+
+    dispatch({
+      type: 'ADD_OPTION_TO_QUESTION',
+      payload: {
+        questionId: question.id,
+        optionText,
+      },
+    });
   };
 
   return (
@@ -41,32 +137,65 @@ export function QuestionItem({ question }) {
         <span className={styles['question-type']}>
           Question Type: {formatQuestionType(question.type)}
         </span>
+
         <div className={styles['question-actions']}>
-          {/* TODO: Students add Edit and Delete buttons here */}
           <button className={styles['edit-btn']} onClick={handleEdit}>
-            Edit (TODO)
+            {isEditing ? 'Cancel' : 'Edit'}
           </button>
+
           <button className={styles['delete-btn']} onClick={handleDelete}>
-            Delete (TODO)
+            Delete
           </button>
         </div>
       </div>
 
-      {/* TODO: Students will add conditional controlled form to edit question here */}
       <div className={styles['question-content']}>
-        <h3>{question.question}</h3>
+        {isEditing ? (
+          <div>
+            <input
+              type="text"
+              value={workingText}
+              onChange={(event) => setWorkingText(event.target.value)}
+            />
+
+            <button type="button" onClick={handleSave}>
+              Save
+            </button>
+          </div>
+        ) : (
+          <h3>{question.question}</h3>
+        )}
       </div>
 
       {question.type === QUESTION_TYPES.MULTIPLE_CHOICE && (
         <div className={styles['options-section']}>
           <h4>Answer Options:</h4>
+
           <ul>
             {question.options.map((option, index) => (
-              <li key={index} className={styles['option-item']}>
-                <span className={styles['option-text']}>{option}</span>
+              <li
+                key={`${question.id}-${index}`}
+                className={styles['option-item']}
+              >
+                {isEditing ? (
+                  <OptionEditor
+                    questionId={question.id}
+                    option={option}
+                    optionIndex={index}
+                    canDelete={question.options.length > 2}
+                  />
+                ) : (
+                  <span className={styles['option-text']}>{option}</span>
+                )}
               </li>
             ))}
           </ul>
+
+          {isEditing && (
+            <button type="button" onClick={handleAddOption}>
+              + Add Option
+            </button>
+          )}
         </div>
       )}
     </div>
